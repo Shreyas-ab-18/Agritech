@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}AgriTech{% endblock %}</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#1d3325;background:#f4f8f3}
+    body{margin:0}header{background:#174b32;color:white;padding:1rem 5vw}
+    header a{color:white;text-decoration:none;margin-right:1rem;font-weight:600}
+    main{max-width:1050px;margin:2rem auto;padding:0 1rem}
+    .panel{background:white;border:1px solid #dce8dc;border-radius:12px;padding:1.25rem;margin:1rem 0}
+    table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:.7rem;border-bottom:1px solid #e4ece4}
+    label{display:block;font-weight:600;margin:.8rem 0 .3rem}
+    input,select{box-sizing:border-box;width:100%;max-width:520px;padding:.65rem;border:1px solid #aebfae;border-radius:7px}
+    button,.button{display:inline-block;background:#17643d;color:white;border:0;border-radius:7px;padding:.65rem 1rem;text-decoration:none;cursor:pointer}
+    .muted{color:#607466}.flash{padding:.7rem 1rem;border-radius:7px;margin:.5rem 0;background:#e7f4e9}
+    .flash.error{background:#fde9e7;color:#842b23}footer{padding:2rem;text-align:center;color:#607466}
+  </style>
+</head>
+<body>
+<header><a href="{{ url_for('index') }}">AgriTech</a><a href="{{ url_for('farmers') }}">Farmers</a><a href="{{ url_for('add_farmer') }}">Add farmer</a><a href="{{ url_for('add_crop') }}">Add crop</a><a href="{{ url_for('prices') }}">Market prices</a></header>
+<main>
+{% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
+{% block content %}{% endblock %}
+</main><footer>AgriTech · Educational prototype</footer>
+</body></html>
