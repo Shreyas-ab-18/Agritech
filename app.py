@@ -41,7 +41,7 @@ def database_cursor(dictionary=False, commit=False):
         conn.close()
 
 
-def positive_decimal(value, field_name, optional=False):
+def positive_decimal(value, field_name, optional=False, max_value=None):
     if optional and (value is None or str(value).strip() == ""):
         return None
     try:
@@ -50,6 +50,10 @@ def positive_decimal(value, field_name, optional=False):
         raise ValueError(f"{field_name} must be a valid number.")
     if not number.is_finite() or number <= 0:
         raise ValueError(f"{field_name} must be greater than zero.")
+    if number.as_tuple().exponent < -2:
+        raise ValueError(f"{field_name} must have at most two decimal places.")
+    if max_value is not None and number > max_value:
+        raise ValueError(f"{field_name} cannot exceed {max_value}.")
     return number
 
 
@@ -131,13 +135,18 @@ def add_crop():
         season = request.form.get("season", "").strip()
         if not farmer_id.isdigit() or not crop_name or len(crop_name) > 100:
             flash("Select a farmer and enter a crop name of at most 100 characters.", "error")
-            return render_template("add_crop.html", farmers=all_farmers), 400
+            return render_template("add_crop.html", farmers=all_farmers, today=date.today().isoformat()), 400
         if season not in {"Kharif","Rabi","Zaid"}:
             flash("Select a valid season.", "error")
             return render_template("add_crop.html", farmers=all_farmers), 400
         try:
-            area = positive_decimal(request.form.get("area_acres"), "Area")
-            expected = positive_decimal(request.form.get("expected_yield_kg"), "Expected yield", optional=True)
+            area = positive_decimal(request.form.get("area_acres"), "Area", max_value=Decimal("9999.99"))
+            expected = positive_decimal(
+                request.form.get("expected_yield_kg"),
+                "Expected yield",
+                optional=True,
+                max_value=Decimal("99999999.99"),
+            )
             sowing = valid_date(request.form.get("sowing_date"), "Sowing date")
         except ValueError as exc:
             flash(str(exc), "error")
@@ -154,7 +163,7 @@ def add_crop():
             return render_template("add_crop.html", farmers=all_farmers), 400
         except mysql.connector.Error:
             return database_unavailable()
-    return render_template("add_crop.html", farmers=all_farmers)
+    return render_template("add_crop.html", farmers=all_farmers, today=date.today().isoformat())
 
 
 @app.route("/crops/delete/<int:crop_id>", methods=["POST"])
