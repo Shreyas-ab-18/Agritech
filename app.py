@@ -138,7 +138,7 @@ def add_crop():
             return render_template("add_crop.html", farmers=all_farmers, today=date.today().isoformat()), 400
         if season not in {"Kharif","Rabi","Zaid"}:
             flash("Select a valid season.", "error")
-            return render_template("add_crop.html", farmers=all_farmers), 400
+            return render_template("add_crop.html", farmers=all_farmers, today=date.today().isoformat()), 400
         try:
             area = positive_decimal(request.form.get("area_acres"), "Area", max_value=Decimal("9999.99"))
             expected = positive_decimal(
@@ -150,7 +150,7 @@ def add_crop():
             sowing = valid_date(request.form.get("sowing_date"), "Sowing date")
         except ValueError as exc:
             flash(str(exc), "error")
-            return render_template("add_crop.html", farmers=all_farmers), 400
+            return render_template("add_crop.html", farmers=all_farmers, today=date.today().isoformat()), 400
         try:
             with database_cursor(commit=True) as cursor:
                 cursor.execute("""INSERT INTO crops
@@ -160,7 +160,7 @@ def add_crop():
             return redirect(url_for("index"))
         except mysql.connector.IntegrityError:
             flash("The selected farmer does not exist. Select a valid farmer.", "error")
-            return render_template("add_crop.html", farmers=all_farmers), 400
+            return render_template("add_crop.html", farmers=all_farmers, today=date.today().isoformat()), 400
         except mysql.connector.Error:
             return database_unavailable()
     return render_template("add_crop.html", farmers=all_farmers, today=date.today().isoformat())
