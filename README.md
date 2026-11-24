@@ -48,6 +48,8 @@ pytest
 | `/crops/delete/<id>` | POST | Delete a crop record |
 | `/prices` | GET | View market-price entries |
 
+Numeric crop fields are checked against the database column limits and allow at most two decimal places before insertion.
+
 ## Security and limitations
 - State-changing forms use Flask-WTF CSRF protection.
 - SQL statements use placeholders.
