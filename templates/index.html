@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Crop records · AgriTech{% endblock %}
+{% block content %}<h1>Crop records</h1><p class="muted">Recent crop activity recorded by farmers.</p><p><a class="button" href="{{ url_for('add_crop') }}">Add crop record</a></p><section class="panel">
+{% if crops %}<table><thead><tr><th>Crop</th><th>Farmer</th><th>Village</th><th>Season</th><th>Area (acres)</th><th></th></tr></thead><tbody>
+{% for crop in crops %}<tr><td>{{ crop.crop_name }}</td><td>{{ crop.farmer_name }}</td><td>{{ crop.village }}</td><td>{{ crop.season }}</td><td>{{ crop.area_acres }}</td><td><form method="post" action="{{ url_for('delete_crop', crop_id=crop.crop_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" onclick="return confirm('Delete this crop record?')">Delete</button></form></td></tr>{% endfor %}
+</tbody></table>{% else %}<p>No crop records yet. Add a farmer, then create a crop record.</p>{% endif %}</section>{% endblock %}
