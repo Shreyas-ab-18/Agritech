@@ -1,43 +1,76 @@
-# Agritech
+# AgriTech
 
-A database-driven farm management web app built with Python (Flask) and
-MySQL. Farmers can be registered, their crops logged per season, and current
-market prices browsed.
+A Flask + MySQL farm-record application for registering farmers, recording crop
+activity by season, and viewing market-price entries.
 
-## Schema
-Three related tables (`farmers`, `crops`, `market_prices`) — see `schema.sql`.
-`crops.farmer_id` is a foreign key into `farmers`, modeling a one-to-many
-relationship between a farmer and the crops they grow.
+> **Status:** Educational/local prototype. This version has no user accounts or
+> role-based access control. Do not expose it to the public internet or store
+> real personal/farm data until authentication, authorization, backups, and
+> production deployment controls are implemented.
+
+## Features
+
+- Farmer registration and farmer directory
+- Crop records linked to farmers
+- Kharif, Rabi, and Zaid season selection
+- Optional sowing date and expected yield
+- Market-price listing
+- Parameterized SQL, server-side validation, CSRF protection, and safe
+  database resource cleanup
+
+## Requirements
+
+- Python 3.10+
+- MySQL 8+
+- Local MySQL account
 
 ## Setup
-```bash
-pip install -r requirements.txt
 
-# create the database and tables
+```bash
+python -m venv .venv
+# Windows PowerShell: .venv\Scripts\Activate.ps1
+# macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
 mysql -u root -p < schema.sql
 ```
 
-Set your DB credentials as environment variables (defaults assume local root
-with no password):
-```bash
-export DB_HOST=localhost
-export DB_USER=root
-export DB_PASSWORD=yourpassword
-export DB_NAME=agritech
-```
+Set `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, and a long random
+`SECRET_KEY` in your environment before running. The application does not
+automatically load a `.env` file.
 
-## Run it
+## Run locally
+
 ```bash
 python app.py
 ```
-Visit `http://127.0.0.1:5000`.
+
+Open http://127.0.0.1:5000.
+
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
 
 ## Routes
-| Route | Description |
-|---|---|
-| `/` | List all logged crops |
-| `/farmers` | List registered farmers |
-| `/farmers/add` | Register a new farmer |
-| `/crops/add` | Log a crop for a farmer |
-| `/crops/delete/<id>` | Delete a crop entry |
-| `/prices` | View market prices |
+
+| Route | Method | Purpose |
+|---|---|---|
+| `/` | GET | List crop records |
+| `/farmers` | GET | List farmers |
+| `/farmers/add` | GET, POST | Register a farmer |
+| `/crops/add` | GET, POST | Add a crop record |
+| `/crops/delete/<id>` | POST | Delete a crop record |
+| `/prices` | GET | View market-price entries |
+
+## Security and limitations
+
+- State-changing forms use Flask-WTF CSRF protection.
+- SQL statements use placeholders.
+- Database cursors and connections are closed on success and failure.
+- CSRF protection is not authentication. Login and role-based authorization
+  are not implemented.
+- Before deployment, add authentication, authorization, HTTPS, a production
+  WSGI server, restricted DB permissions, backups, monitoring, and managed
+  secrets. Do not use the Flask development server in production.
