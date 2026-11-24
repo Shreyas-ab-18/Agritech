@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Add farmer · AgriTech{% endblock %}
+{% block content %}<h1>Register a farmer</h1><section class="panel"><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="name">Full name *</label><input id="name" name="name" maxlength="100" required><label for="village">Village *</label><input id="village" name="village" maxlength="100" required><label for="phone">Phone</label><input id="phone" name="phone" maxlength="15" autocomplete="tel"><p><button type="submit">Save farmer</button></p></form></section>{% endblock %}
