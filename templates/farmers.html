@@ -1,4 +1,2 @@
-{% extends "base.html" %}
-{% block title %}Farmers · AgriTech{% endblock %}
-{% block content %}<h1>Farmers</h1><p><a class="button" href="{{ url_for('add_farmer') }}">Register farmer</a></p><section class="panel">
+{% extends "base.html" %}{% block title %}Farmers · AgriTech{% endblock %}{% block content %}<h1>Farmers</h1><p><a class="button" href="{{ url_for('add_farmer') }}">Register farmer</a></p><section class="panel">
 {% if farmers %}<table><thead><tr><th>Name</th><th>Village</th><th>Phone</th></tr></thead><tbody>{% for farmer in farmers %}<tr><td>{{ farmer.name }}</td><td>{{ farmer.village }}</td><td>{{ farmer.phone or "Not provided" }}</td></tr>{% endfor %}</tbody></table>{% else %}<p>No farmers registered yet.</p>{% endif %}</section>{% endblock %}
