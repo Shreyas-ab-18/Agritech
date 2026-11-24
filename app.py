@@ -19,14 +19,7 @@ app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
 app.config["WTF_CSRF_ENABLED"] = True
 app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024
 CSRFProtect(app)
-
-DB_CONFIG = {
-    "host": os.environ.get("DB_HOST", "localhost"),
-    "user": os.environ.get("DB_USER", "root"),
-    "password": os.environ.get("DB_PASSWORD", ""),
-    "database": os.environ.get("DB_NAME", "agritech"),
-    "connection_timeout": 5,
-}
+DB_CONFIG = {"host": os.environ.get("DB_HOST", "localhost"), "user": os.environ.get("DB_USER", "root"), "password": os.environ.get("DB_PASSWORD", ""), "database": os.environ.get("DB_NAME", "agritech"), "connection_timeout": 5}
 
 
 @contextmanager
@@ -82,14 +75,10 @@ def database_unavailable():
 def index():
     try:
         with database_cursor(dictionary=True) as cursor:
-            cursor.execute("""
-                SELECT c.crop_id, c.crop_name, c.season, c.area_acres,
-                       c.sowing_date, c.expected_yield_kg,
-                       f.name AS farmer_name, f.village
-                FROM crops AS c
-                JOIN farmers AS f ON c.farmer_id = f.farmer_id
-                ORDER BY c.crop_id DESC
-            """)
+            cursor.execute("""SELECT c.crop_id, c.crop_name, c.season, c.area_acres,
+                c.sowing_date, c.expected_yield_kg, f.name AS farmer_name, f.village
+                FROM crops AS c JOIN farmers AS f ON c.farmer_id=f.farmer_id
+                ORDER BY c.crop_id DESC""")
             crops = cursor.fetchall()
         return render_template("index.html", crops=crops)
     except mysql.connector.Error:
@@ -100,7 +89,7 @@ def index():
 def farmers():
     try:
         with database_cursor(dictionary=True) as cursor:
-            cursor.execute("SELECT farmer_id, name, village, phone FROM farmers ORDER BY name")
+            cursor.execute("SELECT farmer_id,name,village,phone FROM farmers ORDER BY name")
             rows = cursor.fetchall()
         return render_template("farmers.html", farmers=rows)
     except mysql.connector.Error:
@@ -110,8 +99,7 @@ def farmers():
 @app.route("/farmers/add", methods=["GET", "POST"])
 def add_farmer():
     if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        village = request.form.get("village", "").strip()
+        name, village = request.form.get("name", "").strip(), request.form.get("village", "").strip()
         phone = request.form.get("phone", "").strip()
         if not name or not village or len(name) > 100 or len(village) > 100:
             flash("Name and village are required and must be 100 characters or fewer.", "error")
@@ -121,10 +109,7 @@ def add_farmer():
             return render_template("add_farmer.html"), 400
         try:
             with database_cursor(commit=True) as cursor:
-                cursor.execute(
-                    "INSERT INTO farmers (name, village, phone) VALUES (%s, %s, %s)",
-                    (name, village, phone or None),
-                )
+                cursor.execute("INSERT INTO farmers (name,village,phone) VALUES (%s,%s,%s)", (name,village,phone or None))
             flash(f"Farmer '{name}' added.", "success")
             return redirect(url_for("farmers"))
         except mysql.connector.Error:
@@ -136,11 +121,10 @@ def add_farmer():
 def add_crop():
     try:
         with database_cursor(dictionary=True) as cursor:
-            cursor.execute("SELECT farmer_id, name, village FROM farmers ORDER BY name")
+            cursor.execute("SELECT farmer_id,name,village FROM farmers ORDER BY name")
             all_farmers = cursor.fetchall()
     except mysql.connector.Error:
         return database_unavailable()
-
     if request.method == "POST":
         farmer_id = request.form.get("farmer_id", "").strip()
         crop_name = request.form.get("crop_name", "").strip()
@@ -148,26 +132,21 @@ def add_crop():
         if not farmer_id.isdigit() or not crop_name or len(crop_name) > 100:
             flash("Select a farmer and enter a crop name of at most 100 characters.", "error")
             return render_template("add_crop.html", farmers=all_farmers), 400
-        if season not in {"Kharif", "Rabi", "Zaid"}:
+        if season not in {"Kharif","Rabi","Zaid"}:
             flash("Select a valid season.", "error")
             return render_template("add_crop.html", farmers=all_farmers), 400
         try:
             area = positive_decimal(request.form.get("area_acres"), "Area")
-            expected_yield = positive_decimal(
-                request.form.get("expected_yield_kg"), "Expected yield", optional=True
-            )
-            sowing_date = valid_date(request.form.get("sowing_date"), "Sowing date")
+            expected = positive_decimal(request.form.get("expected_yield_kg"), "Expected yield", optional=True)
+            sowing = valid_date(request.form.get("sowing_date"), "Sowing date")
         except ValueError as exc:
             flash(str(exc), "error")
             return render_template("add_crop.html", farmers=all_farmers), 400
         try:
             with database_cursor(commit=True) as cursor:
-                cursor.execute(
-                    """INSERT INTO crops
-                       (farmer_id, crop_name, season, area_acres, sowing_date, expected_yield_kg)
-                       VALUES (%s, %s, %s, %s, %s, %s)""",
-                    (int(farmer_id), crop_name, season, area, sowing_date, expected_yield),
-                )
+                cursor.execute("""INSERT INTO crops
+                    (farmer_id,crop_name,season,area_acres,sowing_date,expected_yield_kg)
+                    VALUES (%s,%s,%s,%s,%s,%s)""", (int(farmer_id),crop_name,season,area,sowing,expected))
             flash(f"Crop '{crop_name}' logged.", "success")
             return redirect(url_for("index"))
         except mysql.connector.IntegrityError:
@@ -182,10 +161,9 @@ def add_crop():
 def delete_crop(crop_id):
     try:
         with database_cursor(commit=True) as cursor:
-            cursor.execute("DELETE FROM crops WHERE crop_id = %s", (crop_id,))
+            cursor.execute("DELETE FROM crops WHERE crop_id=%s", (crop_id,))
             deleted = cursor.rowcount
-        flash("Crop entry deleted." if deleted else "Crop entry not found.",
-              "success" if deleted else "error")
+        flash("Crop entry deleted." if deleted else "Crop entry not found.", "success" if deleted else "error")
         return redirect(url_for("index"))
     except mysql.connector.Error:
         return database_unavailable()
@@ -195,9 +173,7 @@ def delete_crop(crop_id):
 def prices():
     try:
         with database_cursor(dictionary=True) as cursor:
-            cursor.execute(
-                "SELECT crop_name, price_per_kg, updated_on FROM market_prices ORDER BY updated_on DESC"
-            )
+            cursor.execute("SELECT crop_name,price_per_kg,updated_on FROM market_prices ORDER BY updated_on DESC")
             rows = cursor.fetchall()
         return render_template("prices.html", prices=rows)
     except mysql.connector.Error:
@@ -218,8 +194,5 @@ if __name__ == "__main__":
     environment = os.environ.get("APP_ENV", "development").lower()
     if environment == "production" and not os.environ.get("SECRET_KEY"):
         raise RuntimeError("Set SECRET_KEY before starting in production.")
-    app.run(
-        host=os.environ.get("HOST", "127.0.0.1"),
-        port=int(os.environ.get("PORT", "5000")),
-        debug=environment == "development" and os.environ.get("FLASK_DEBUG") == "1",
-    )
+    app.run(host=os.environ.get("HOST","127.0.0.1"), port=int(os.environ.get("PORT","5000")),
+            debug=environment == "development" and os.environ.get("FLASK_DEBUG") == "1")
